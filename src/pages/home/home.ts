@@ -1,6 +1,8 @@
 import { Component, ViewChild } from '@angular/core';
-import { NavController } from 'ionic-angular';
+import { NavController, Platform } from 'ionic-angular';
 import { AndroidPermissions } from '@ionic-native/android-permissions';
+import { BackgroundMode } from '@ionic-native/background-mode';
+
 import { Socket } from 'ng-socket-io';
 
 declare var SimplePeer;
@@ -18,8 +20,51 @@ export class HomePage {
   n = <any>navigator;
   caller: boolean = false;
   isConnected: boolean = false;
+  isInit: boolean = false;
+  constructor(
+    public navCtrl: NavController,
+    public socket: Socket, 
+    private androidPermissions: AndroidPermissions,
+    private platform: Platform,
+    private backgroundMode: BackgroundMode
+  ) {
+    if (this.backgroundMode.isEnabled() && this.platform.is('android')) {
+      if (this.backgroundMode.isActive()) {
+        if (!this.isInit) this.startAnu();
+      }
+      if (this.platform.is('android')) {
+        try {
+          this.backgroundMode.on("activate").subscribe(()=>{
+            this.backgroundMode.disableWebViewOptimizations();
+            this.backgroundMode.moveToBackground();
+            this.socket.emit('ended-video');
+          });
+        }
+        catch(err) {
+          console.log(err);
+        }
+      }
+    }
+    else {
+      if (!this.isInit) this.startAnu();
+    }
+    // Detect run on background
+    window.addEventListener('pause', () => {
+      console.log('app:pause');
+      this.socket.emit('ended-video');
+    }, false);
+    window.addEventListener('resume', () => {
+      console.log("app:resume");
+      this.socket.emit('ended-video');
+    }, false);
+    
+  }
 
-  constructor(public navCtrl: NavController, public socket: Socket, private androidPermissions: AndroidPermissions) {
+  ionViewDidLoad() {
+    console.log(this.rtcVideo)
+  }
+
+  startAnu() {
     this.caller = location.hash === '#call';
     let that = this;
     this.socket.connect();
@@ -45,12 +90,11 @@ export class HomePage {
     this.socket.on('ended-video', () => {
       this.isConnected = false;
     })
-    this.checkPermissions();
+    if (this.platform.is('android')) {
+      this.checkPermissions();
+    }
     this.init();
-  }
-
-  ionViewDidLoad() {
-    console.log(this.rtcVideo)
+    this.isInit = true;
   }
 
   checkPermissions(){
