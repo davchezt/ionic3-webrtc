@@ -1,0 +1,18 @@
+<ion-header>
+  <ion-navbar>
+    <ion-title>
+      Ionic Blank
+    </ion-title>
+  </ion-navbar>
+</ion-header>
+
+<ion-content padding>
+  <button ion-button (click)="disconnect()" *ngIf="isConnected">Disconnect</button>
+  <button ion-button (click)="message()" *ngIf="isConnected">Send Message</button>
+  <ion-textarea rows="4" [(ngModel)]="targetpeer"></ion-textarea>
+  <button ion-button (click)="connect()" *ngIf="!caller && targetpeer">Connect</button>
+  
+  <div class="video-container">
+    <video #rtcVideo></video>
+  </div>
+</ion-content>
