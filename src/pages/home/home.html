@@ -59,5 +59,11 @@
   </div>
 
   <video #locVideo constrols width="120" class="myvideo" *ngIf="isInit || isConnected"></video>
-  <div class="time-now">{{ timeClock }}</div>
+  <div class="time-now">
+    <ion-item>
+      <ion-label>caller</ion-label>
+      <ion-toggle checked="false" [(ngModel)]="caller"></ion-toggle>
+    </ion-item>
+    {{ timeClock }}
+  </div>
 </ion-content>

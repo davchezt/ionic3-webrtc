@@ -306,6 +306,10 @@ export class HomePage {
     }, 5000);
   }
 
+  toggleChange() {
+    
+  }
+
   startTimer() {
     this.timeInterval = setInterval(() => {
       this.s++;
