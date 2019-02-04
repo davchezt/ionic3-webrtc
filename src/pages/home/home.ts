@@ -27,6 +27,12 @@ export class HomePage {
   smileShow: boolean = false;
   heartShow: boolean = false;
   timeOut: any;
+  timeInterval: any;
+  timeCounter: any;
+  timeClock: any;
+  h:number = 0;
+  m:number = 0;
+  s:number = 0;
   constructor(
     public navCtrl: NavController,
     public socket: Socket, 
@@ -67,6 +73,7 @@ export class HomePage {
 
   ionViewDidLoad() {
     this.startAnu();
+    this.timeNow();
   }
 
   startAnu() {
@@ -78,6 +85,7 @@ export class HomePage {
       if (peer.data.type === 'offer') {
         if (!this.caller) {
           console.log('offer:', peer.data);
+          if (!this.caller) this.init();
           this.targetpeer = JSON.stringify(peer.data);
         }
       }
@@ -94,6 +102,7 @@ export class HomePage {
     this.socket.on('in-call', (data) => {
       console.log('in-call')
       this.isConnected = true;
+      this.isInit = false;
     });
     this.socket.on('chat-call', (data) => {
       let peer:any = data;
@@ -133,10 +142,11 @@ export class HomePage {
     });
     this.socket.on('stop-call', (data) => {
       this.isConnected = false;
-      console.log('stop-call')
+      this.disconnect();
+      console.log('stop-call');
     })
 
-    this.init();
+    // this.init();
   }
 
   // checkPermissions(){
@@ -160,6 +170,7 @@ export class HomePage {
   // }
 
   init() {
+    this.isInit = true;
     this.n.getUserMedia = (this.n.getUserMedia || this.n.webkitGetUserMedia || this.n.mozGetUserMedia || this.n.msGetUserMedia);
     this.n.getUserMedia({ video:true, audio:true }, (stream) => {
       this.cameraStream = stream;
@@ -194,6 +205,7 @@ export class HomePage {
       });
 
       this.peer.on('connect', () => {
+        this.startTimer();
         this.socket.emit('in-call', { room: this.roomId });
         console.log("peer connect");
         console.log("isConnected: ", this.isConnected)
@@ -217,7 +229,7 @@ export class HomePage {
 
       this.peer.on('close', () => {
         console.log("peer close");
-        this.disconnect();
+        this.stropTimer();
         this.socket.emit('stop-call', { room: this.roomId });
         stream.getVideoTracks().forEach(function(track) {
           track.stop();
@@ -238,6 +250,7 @@ export class HomePage {
       this.peer.on('error', (err) => {
         console.log(err);
         this.disconnect();
+        this.stropTimer();
         this.socket.emit('stop-call', { room: this.roomId });
       });
 
@@ -275,7 +288,7 @@ export class HomePage {
       this.peer.destroy();
       this.peer = null;
       this.targetpeer = null;
-      this.init();
+      // this.init();
     }
   }
 
@@ -292,5 +305,55 @@ export class HomePage {
       this.heartShow = false;
     }, 5000);
   }
+
+  startTimer() {
+    this.timeInterval = setInterval(() => {
+      this.s++;
+      if (this.s >= 60) {
+        this.s = 0; this.m++;
+      }
+      if (this.m >= 60) {
+        this.m = 0; this.h++;
+      }
+      let dm = this.m < 10 ? "0" + this.m:this.m;
+      let ds = this.s < 10 ? "0" + this.s:this.s;
+      this.timeCounter = this.h + ":" + dm + ":" + ds;
+    }, 1000);
+  }
+
+  stropTimer() {
+    this.timeCounter = null;
+    this.h = 0;
+    this.m = 0;
+    this.s = 0;
+    if (this.timeInterval) clearInterval(this.timeInterval);
+  }
+
+  timeNow() {
+    setInterval(() => {
+      let date = new Date();
+      let time = date.getTime() / 1000;
+      this.timeClock = this.getHHMM(time);
+    }, 1000);
+  }
+
+
+  getHHMM = (t: number) => {
+    let d = new Date(t * 1000);
+    let h = d.getHours();
+    let m = d.getMinutes();
+    let s = d.getSeconds();
+    let a = "";
+    let ms = "";
+    if (h > 0 && h < 12) {
+      a = "AM";
+    } else {
+      if (h == 0) a = "AM";
+      else a = "PM";
+    }
+    if (m < 10) ms = "0" + m;
+    else ms = "" + m;
+    return (h == 0 || h == 12 ? 12 : h % 12) + ":" + ms + ":" + s + " " + a;
+  };
 
 }
