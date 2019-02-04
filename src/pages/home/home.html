@@ -22,9 +22,20 @@
           </button>
         </ion-col>
         <ion-col>
-          <button ion-button block color="secondary" (click)="message()" [disabled]="!isConnected">
-            <ion-icon name="ios-heart-outline"></ion-icon>
-          </button>
+          <ion-grid class="button-group" no-padding>
+            <ion-row>
+              <ion-col>
+                <button ion-button block color="dark" (click)="sendMessage()" [disabled]="!isConnected">
+                  <ion-icon name="ios-happy-outline" color="secondary"></ion-icon>
+                </button>
+              </ion-col>
+              <ion-col>
+                <button ion-button block color="light" (click)="message()" [disabled]="!isConnected">
+                  <ion-icon name="ios-heart-outline" color="danger"></ion-icon>
+                </button>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
         </ion-col>
         <ion-col>
           <button ion-button block color="danger" (click)="disconnect()" [disabled]="!isConnected">
@@ -39,8 +50,12 @@
     <video #rtcVideo></video>
   </div>
 
-  <div class="smile" *ngIf="smileShow">
-    <ion-icon name="ios-heart" style="zoom: 5" color="danger"></ion-icon>
+  <div class="smile" *ngIf="heartShow">
+    <ion-icon name="ios-heart-outline" color="danger"></ion-icon>
   </div>
+  <div class="smile" *ngIf="smileShow">
+    <ion-icon name="ios-happy-outline" color="secondary"></ion-icon>
+  </div>
+
   <video #locVideo constrols width="120" class="myvideo"></video>
 </ion-content>

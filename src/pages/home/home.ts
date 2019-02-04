@@ -16,6 +16,7 @@ export class HomePage {
   @ViewChild('rtcVideo') rtcVideo;
   @ViewChild('locVideo') locVideo;
 
+  cameraStream: any;
   targetpeer: any;
   peer: any;
   n = <any>navigator;
@@ -24,6 +25,8 @@ export class HomePage {
   isInit: boolean = false;
   roomId = "vidoe-call";
   smileShow: boolean = false;
+  heartShow: boolean = false;
+  timeOut: any;
   constructor(
     public navCtrl: NavController,
     public socket: Socket, 
@@ -96,10 +99,36 @@ export class HomePage {
       let peer:any = data;
       console.log(peer.message);
       if (this.caller) {
-        if(!peer.message.sender) this.shoSmile();
+        if(!peer.message.sender) {
+          if (peer.message.text == 'ping') {
+            if (this.timeOut) clearTimeout(this.timeOut);
+            this.smileShow = false;
+            this.heartShow = false;
+            this.showSmile();
+          }
+          else {
+            if (this.timeOut) clearTimeout(this.timeOut);
+            this.smileShow = false;
+            this.heartShow = false;
+            this.showHeart();
+          }
+        }
       }
       else {
-        if(peer.message.sender) this.shoSmile();
+        if(peer.message.sender) {
+          if (peer.message.text == 'ping') {
+            if (this.timeOut) clearTimeout(this.timeOut);
+            this.smileShow = false;
+            this.heartShow = false;
+            this.showSmile();
+          }
+          else {
+            if (this.timeOut) clearTimeout(this.timeOut);
+            this.smileShow = false;
+            this.heartShow = false;
+            this.showHeart();
+          }
+        }
       }
     });
     this.socket.on('stop-call', (data) => {
@@ -133,12 +162,13 @@ export class HomePage {
   init() {
     this.n.getUserMedia = (this.n.getUserMedia || this.n.webkitGetUserMedia || this.n.mozGetUserMedia || this.n.msGetUserMedia);
     this.n.getUserMedia({ video:true, audio:true }, (stream) => {
-      if (!this.locVideo.nativeElement.srcObject) this.locVideo.nativeElement.srcObject = stream;
+      this.cameraStream = stream;
+      if (!this.locVideo.nativeElement.srcObject) this.locVideo.nativeElement.srcObject = this.cameraStream;
       this.locVideo.nativeElement.play();
       this.peer = new SimplePeer({
         initiator: this.caller,
         trickle: false,
-        stream: stream,
+        stream: this.cameraStream,
         iceTransportPolicy: "relay",
         config: {
           iceServers: [
@@ -177,7 +207,7 @@ export class HomePage {
       
       this.peer.on('data', (data) => {
         console.log('Recieved message:' + data);
-        this.shoSmile();
+        this.showSmile();
       });
       
       this.peer.on('stream', (streams) => {
@@ -189,6 +219,20 @@ export class HomePage {
         console.log("peer close");
         this.disconnect();
         this.socket.emit('stop-call', { room: this.roomId });
+        stream.getVideoTracks().forEach(function(track) {
+          track.stop();
+        });
+        stream.getAudioTracks().forEach(function(track) {
+          track.stop();
+        });
+        if (this.cameraStream) {
+          this.cameraStream.getVideoTracks().forEach(function(track) {
+            track.stop();
+          });
+          this.cameraStream.getAudioTracks().forEach(function(track) {
+            track.stop();
+          });
+        }
       });
 
       this.peer.on('error', (err) => {
@@ -211,12 +255,20 @@ export class HomePage {
   message() {
     if (this.peer) {
       // this.peer.send("ping!");
+      this.socket.emit('chat-call', { room: this.roomId, message: { text: "heart", sender: this.caller }});
+    }
+  }
+
+  sendMessage() {
+    if (this.peer) {
+      // this.peer.send(this.message);
       this.socket.emit('chat-call', { room: this.roomId, message: { text: "ping", sender: this.caller }});
     }
   }
 
   disconnect() {
     if (this.peer) {
+      this.locVideo.nativeElement.srcObject = null;
       this.rtcVideo.nativeElement.pause();
       this.rtcVideo.nativeElement.srcObject = null;
 
@@ -227,11 +279,18 @@ export class HomePage {
     }
   }
 
-  shoSmile() {
+  showSmile() {
     this.smileShow = true;
-    setTimeout(() => {
+    this.timeOut = setTimeout(() => {
       this.smileShow = false;
-    }, 3000);
+    }, 5000);
+  }
+
+  showHeart() {
+    this.heartShow = true;
+    this.timeOut = setTimeout(() => {
+      this.heartShow = false;
+    }, 5000);
   }
 
 }
