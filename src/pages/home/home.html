@@ -58,6 +58,6 @@
     <ion-icon name="ios-thumbs-up-outline" color="primary"></ion-icon>
   </div>
 
-  <video #locVideo constrols width="120" class="myvideo"></video>
+  <video #locVideo constrols width="120" class="myvideo" *ngIf="isInit || isConnected"></video>
   <div class="time-now">{{ timeClock }}</div>
 </ion-content>
