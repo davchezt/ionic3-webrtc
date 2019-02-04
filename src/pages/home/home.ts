@@ -345,6 +345,7 @@ export class HomePage {
     let s = d.getSeconds();
     let a = "";
     let ms = "";
+    let ss = "";
     if (h > 0 && h < 12) {
       a = "AM";
     } else {
@@ -353,7 +354,9 @@ export class HomePage {
     }
     if (m < 10) ms = "0" + m;
     else ms = "" + m;
-    return (h == 0 || h == 12 ? 12 : h % 12) + ":" + ms + ":" + s + " " + a;
+    if (s < 10) ss = "0" + s;
+    else ss = "" + s;
+    return (h == 0 || h == 12 ? 12 : h % 12) + ":" + ms + ":" + ss + " " + a;
   };
 
 }
