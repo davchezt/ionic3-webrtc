@@ -1,5 +1,5 @@
 import { Component, ViewChild } from '@angular/core';
-import { NavController, Platform } from 'ionic-angular';
+import { NavController/*, Platform*/ } from 'ionic-angular';
 // import { AndroidPermissions } from '@ionic-native/android-permissions';
 // import { BackgroundMode } from '@ionic-native/background-mode';
 
@@ -23,6 +23,7 @@ export class HomePage {
   isConnected: boolean = false;
   isInit: boolean = false;
   roomId = "vidoe-call";
+  smileShow: boolean = false;
   constructor(
     public navCtrl: NavController,
     public socket: Socket, 
@@ -62,7 +63,6 @@ export class HomePage {
   }
 
   ionViewDidLoad() {
-    // console.log(this.rtcVideo)
     this.startAnu();
   }
 
@@ -73,13 +73,13 @@ export class HomePage {
     this.socket.on('start-call', (data) => {
       let peer:any = data;
       if (peer.data.type === 'offer') {
-        if (location.hash !== '#call') {
+        if (!this.caller) {
           console.log('offer:', peer.data);
           this.targetpeer = JSON.stringify(peer.data);
         }
       }
       else {
-        if (location.hash === '#call') {
+        if (this.caller) {
           console.log('answer:', peer.data);
           this.targetpeer = JSON.stringify(peer.data);
           if (this.peer) {
@@ -95,16 +95,19 @@ export class HomePage {
     this.socket.on('chat-call', (data) => {
       let peer:any = data;
       console.log(peer.message);
+      if (this.caller) {
+        if(!peer.message.sender) this.shoSmile();
+      }
+      else {
+        if(peer.message.sender) this.shoSmile();
+      }
     });
     this.socket.on('stop-call', (data) => {
       this.isConnected = false;
       console.log('stop-call')
     })
-    // if (this.platform.is('android')) {
-    //   this.checkPermissions();
-    // }
+
     this.init();
-    // this.isInit = true;
   }
 
   // checkPermissions(){
@@ -128,14 +131,12 @@ export class HomePage {
   // }
 
   init() {
-    let peerx: any = null;
-    let that = this;
     this.n.getUserMedia = (this.n.getUserMedia || this.n.webkitGetUserMedia || this.n.mozGetUserMedia || this.n.msGetUserMedia);
-    this.n.getUserMedia({ video:true, audio:true }, function(stream) {
-      that.locVideo.nativeElement.srcObject = stream;
-      that.locVideo.nativeElement.play();
-      peerx = new SimplePeer({
-        initiator: location.hash === '#call',
+    this.n.getUserMedia({ video:true, audio:true }, (stream) => {
+      if (!this.locVideo.nativeElement.srcObject) this.locVideo.nativeElement.srcObject = stream;
+      this.locVideo.nativeElement.play();
+      this.peer = new SimplePeer({
+        initiator: this.caller,
         trickle: false,
         stream: stream,
         iceTransportPolicy: "relay",
@@ -160,57 +161,45 @@ export class HomePage {
             }
           ]
         }
-      })
+      });
 
-      peerx.on('connect', function() {
-        that.socket.emit('in-call', { room: that.roomId });
+      this.peer.on('connect', () => {
+        this.socket.emit('in-call', { room: this.roomId });
         console.log("peer connect");
-        console.log("isConnected: ", that.isConnected)
-      })
+        console.log("isConnected: ", this.isConnected)
+      });
       
-      peerx.on('signal', function(data) {
+      this.peer.on('signal', (data) => {
         // console.log('signal:', JSON.stringify(data));
-        // that.locVideo.nativeElement.srcObject = stream;
-        // that.locVideo.nativeElement.play();
-        
-        if (location.hash !== '#call') {
-          that.targetpeer = JSON.stringify(data);
-        }
-        that.socket.emit('start-call', { room: that.roomId, data: data });
-      })
-      
-      peerx.on('data', function(data) {
-        console.log('Recieved message:' + data);
-      })
-      
-      peerx.on('stream', function(streams) {
-        // console.log(that.rtcVideo);
-        // that.rtcVideo.nativeElement.src = URL.createObjectURL(stream);
-        that.rtcVideo.nativeElement.srcObject = streams;
-        that.rtcVideo.nativeElement.play();
-      })
 
-      peerx.on('close', function() {
+        this.socket.emit('start-call', { room: this.roomId, data: data });
+      });
+      
+      this.peer.on('data', (data) => {
+        console.log('Recieved message:' + data);
+        this.shoSmile();
+      });
+      
+      this.peer.on('stream', (streams) => {
+        this.rtcVideo.nativeElement.srcObject = streams;
+        this.rtcVideo.nativeElement.play();
+      });
+
+      this.peer.on('close', () => {
         console.log("peer close");
-        that.disconnect();
-        that.socket.emit('stop-call', { room: that.roomId });
-        // that.init();
-      })
-      peerx.on('error', function(err) {
+        this.disconnect();
+        this.socket.emit('stop-call', { room: this.roomId });
+      });
+
+      this.peer.on('error', (err) => {
         console.log(err);
-        that.targetpeer = null;
-        that.isConnected = false;
-      })
-    
-    }, function(err){
+        this.disconnect();
+        this.socket.emit('stop-call', { room: this.roomId });
+      });
+
+    }, (err) => {
       console.log('Failed to get stream', err);
     });
-    
-    const timeOut = peerx !== null ? 100:5000;
-    setTimeout(() => {
-      this.peer = peerx;
-      console.log('peer:constructor', this.peer);
-    }, timeOut);
   }
 
   connect() {
@@ -221,8 +210,8 @@ export class HomePage {
   
   message() {
     if (this.peer) {
-      this.peer.send("test");
-      this.socket.emit('chat-call', { room: this.roomId, message: "test"});
+      // this.peer.send("ping!");
+      this.socket.emit('chat-call', { room: this.roomId, message: { text: "ping", sender: this.caller }});
     }
   }
 
@@ -234,11 +223,15 @@ export class HomePage {
       this.peer.destroy();
       this.peer = null;
       this.targetpeer = null;
-      const timeOut = this.peer !== null ? 100:5000;
-      setTimeout(() => {
-        this.init();
-      }, timeOut);
+      this.init();
     }
+  }
+
+  shoSmile() {
+    this.smileShow = true;
+    setTimeout(() => {
+      this.smileShow = false;
+    }, 3000);
   }
 
 }

@@ -1,5 +1,5 @@
 <ion-header>
-  <ion-navbar>
+  <ion-navbar color="primary">
     <ion-title>
       Ionic Blank
     </ion-title>
@@ -8,15 +8,39 @@
 
 <ion-content padding>
   <div class="content">
-    <button ion-button (click)="disconnect()" *ngIf="isConnected">Disconnect</button>
-    <button ion-button (click)="message()" *ngIf="isConnected">Send Message</button>
-    <ion-textarea rows="4" [(ngModel)]="targetpeer"></ion-textarea>
-    <button ion-button (click)="connect()" *ngIf="!caller && !isConnected && targetpeer">Connect</button>
+    <h1 ion-text *ngIf="caller && !isConnected" color="primary"><ion-icon name="ios-videocam-outline" style="zoom: .75;"></ion-icon>  CALLING</h1>
+    <h1 ion-text *ngIf="!caller && !isConnected && targetpeer" color="primary"><ion-icon name="ios-videocam-outline" style="zoom: .75;"></ion-icon> INCOMMING CALL</h1>
+    <!--ion-textarea rows="4" [(ngModel)]="targetpeer"></ion-textarea-->
+    <ion-grid class="button-group">
+      <ion-row>
+        <ion-col>
+          <button *ngIf="caller" ion-button block color="primary" disabled>
+            <ion-icon name="ios-call"></ion-icon>
+          </button>
+          <button *ngIf="!caller" ion-button block color="primary" (click)="connect()" [disabled]="isConnected && targetpeer || !isConnected && !targetpeer">
+            <ion-icon name="ios-call"></ion-icon>
+          </button>
+        </ion-col>
+        <ion-col>
+          <button ion-button block color="secondary" (click)="message()" [disabled]="!isConnected">
+            <ion-icon name="ios-heart-outline"></ion-icon>
+          </button>
+        </ion-col>
+        <ion-col>
+          <button ion-button block color="danger" (click)="disconnect()" [disabled]="!isConnected">
+            <ion-icon name="ios-call-outline"></ion-icon>
+          </button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
   </div>
   
   <div class="video-container">
     <video #rtcVideo></video>
   </div>
 
+  <div class="smile" *ngIf="smileShow">
+    <ion-icon name="ios-heart" style="zoom: 5" color="danger"></ion-icon>
+  </div>
   <video #locVideo constrols width="120" class="myvideo"></video>
 </ion-content>
