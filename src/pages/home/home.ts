@@ -89,6 +89,7 @@ export class HomePage {
       }
     })
     this.socket.on('in-call', (data) => {
+      console.log('in-call')
       this.isConnected = true;
     });
     this.socket.on('chat-call', (data) => {
@@ -97,6 +98,7 @@ export class HomePage {
     });
     this.socket.on('stop-call', (data) => {
       this.isConnected = false;
+      console.log('stop-call')
     })
     // if (this.platform.is('android')) {
     //   this.checkPermissions();
@@ -136,10 +138,28 @@ export class HomePage {
         initiator: location.hash === '#call',
         trickle: false,
         stream: stream,
-        // iceTransportPolicy: "relay",
-        // config: {
-        //   iceServers: [/*{ urls: "stun:stun.l.google.com:19302" }*/]
-        // }
+        iceTransportPolicy: "relay",
+        config: {
+          iceServers: [
+            // { urls: 'stun:stun.l.google.com:19302' },
+            // { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
+            // {
+            //   url: 'turn:turn.anyfirewall.com:443?transport=tcp',
+            //   credential: 'webrtc',
+            //   username: 'webrtc'
+            // },
+            {
+              url: 'stun:numb.viagenie.ca',
+              credential: '4Bahagia4',
+              username: 'davchezt@gmail.com'
+            },
+            {
+              url: 'turn:numb.viagenie.ca',
+              credential: '4Bahagia4',
+              username: 'davchezt@gmail.com'
+            }
+          ]
+        }
       })
 
       peerx.on('connect', function() {
