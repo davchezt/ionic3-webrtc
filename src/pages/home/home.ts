@@ -103,6 +103,7 @@ export class HomePage {
       console.log('in-call')
       this.isConnected = true;
       this.isInit = false;
+      this.startTimer();
     });
     this.socket.on('chat-call', (data) => {
       let peer:any = data;
@@ -143,6 +144,7 @@ export class HomePage {
     this.socket.on('stop-call', (data) => {
       this.isConnected = false;
       this.disconnect();
+      this.stropTimer();
       console.log('stop-call');
     })
 
@@ -183,29 +185,28 @@ export class HomePage {
         iceTransportPolicy: "relay",
         config: {
           iceServers: [
-            // { urls: 'stun:stun.l.google.com:19302' },
-            // { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
             // {
             //   url: 'turn:turn.anyfirewall.com:443?transport=tcp',
             //   credential: 'webrtc',
             //   username: 'webrtc'
             // },
-            {
-              url: 'stun:numb.viagenie.ca',
-              credential: '4Bahagia4',
-              username: 'davchezt@gmail.com'
-            },
-            {
-              url: 'turn:numb.viagenie.ca',
-              credential: '4Bahagia4',
-              username: 'davchezt@gmail.com'
-            }
+            // {
+            //   url: 'stun:numb.viagenie.ca',
+            //   credential: '4Bahagia4',
+            //   username: 'davchezt@gmail.com'
+            // },
+            // {
+            //   url: 'turn:numb.viagenie.ca',
+            //   credential: '4Bahagia4',
+            //   username: 'davchezt@gmail.com'
+            // }
           ]
         }
       });
 
       this.peer.on('connect', () => {
-        this.startTimer();
         this.socket.emit('in-call', { room: this.roomId });
         console.log("peer connect");
         console.log("isConnected: ", this.isConnected)
@@ -229,7 +230,6 @@ export class HomePage {
 
       this.peer.on('close', () => {
         console.log("peer close");
-        this.stropTimer();
         this.socket.emit('stop-call', { room: this.roomId });
         stream.getVideoTracks().forEach(function(track) {
           track.stop();
@@ -250,7 +250,6 @@ export class HomePage {
       this.peer.on('error', (err) => {
         console.log(err);
         this.disconnect();
-        this.stropTimer();
         this.socket.emit('stop-call', { room: this.roomId });
       });
 
@@ -311,6 +310,7 @@ export class HomePage {
   }
 
   startTimer() {
+    if (this.timeInterval) return;
     this.timeInterval = setInterval(() => {
       this.s++;
       if (this.s >= 60) {
@@ -330,7 +330,10 @@ export class HomePage {
     this.h = 0;
     this.m = 0;
     this.s = 0;
-    if (this.timeInterval) clearInterval(this.timeInterval);
+    if (this.timeInterval) {
+      clearInterval(this.timeInterval);
+      this.timeInterval = null;
+    }
   }
 
   timeNow() {

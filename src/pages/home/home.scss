@@ -67,6 +67,7 @@ page-home {
       text-align: center;
       font-size: 150%;
     }
+    
     h1:not(.timer) {
       width: 16.3em;
       white-space: nowrap;
@@ -82,11 +83,15 @@ page-home {
     padding: 14px;
     background: rgba(0, 0, 0, 0.5);
     border-radius: 4px;
+    text-align: center;
 
     ion-item {
       border-radius: 4px;
       margin-bottom: 8px;
       border: 0.55px solid #c8c7cc;
+      background: transparent;
+      color: #fff;
+      text-align: center;
     }
   }
 
