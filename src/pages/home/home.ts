@@ -4,6 +4,8 @@ import { NavController/*, Platform*/ } from 'ionic-angular';
 // import { BackgroundMode } from '@ionic-native/background-mode';
 
 import { Socket } from 'ng-socket-io';
+import { Observable } from 'rxjs/Observable';
+import 'rxjs/add/observable/fromEvent';
 
 declare var SimplePeer;
 
@@ -68,7 +70,9 @@ export class HomePage {
     //   console.log("app:resume");
     //   this.socket.emit('stop-call');
     // }, false);
-    
+    Observable.fromEvent(window, 'beforeunload').subscribe(event => {
+      if (this.peer) this.disconnect();
+    });
   }
 
   ionViewDidLoad() {

@@ -10,7 +10,7 @@
   <div class="content">    
     <h1 ion-text *ngIf="caller && !isConnected && isInit" color="primary">START CALLING</h1>
     <h1 ion-text *ngIf="!caller && !isConnected && targetpeer" color="primary">INCOMMING CALL</h1>
-    <h1 ion-text *ngIf="timeCounter" color="primary" class="timer">{{ timeCounter }}</h1>
+    <h1 ion-text *ngIf="timeCounter" color="primary" class="timer"><ion-icon name="ios-videocam-outline" style="zoom:0.75"></ion-icon> {{ timeCounter }}</h1>
     <!--ion-textarea rows="4" [(ngModel)]="targetpeer"></ion-textarea-->
     <ion-grid class="button-group">
       <ion-row>
