@@ -9,7 +9,6 @@ import { HomePage } from '../pages/home/home';
 
 // NATIVES
 import { AndroidPermissions } from '@ionic-native/android-permissions';
-import { BackgroundMode } from '@ionic-native/background-mode';
 import { Camera } from '@ionic-native/camera';
 
 import { SocketIoModule, SocketIoConfig } from 'ng-socket-io';
@@ -37,7 +36,6 @@ const config: SocketIoConfig = { url: 'https://militant-socket-server.herokuapp.
     StatusBar,
     SplashScreen,
     AndroidPermissions,
-    BackgroundMode,
     Camera,
     {provide: ErrorHandler, useClass: IonicErrorHandler}
   ]

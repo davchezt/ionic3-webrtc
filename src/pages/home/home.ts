@@ -1,7 +1,7 @@
 import { Component, ViewChild } from '@angular/core';
-import { NavController/*, Platform*/ } from 'ionic-angular';
-// import { AndroidPermissions } from '@ionic-native/android-permissions';
-// import { BackgroundMode } from '@ionic-native/background-mode';
+import { NavController, Platform } from 'ionic-angular';
+import { AndroidPermissions } from '@ionic-native/android-permissions';
+import { Camera, CameraOptions } from '@ionic-native/camera';
 
 import { Socket } from 'ng-socket-io';
 import { Observable } from 'rxjs/Observable';
@@ -38,30 +38,12 @@ export class HomePage {
   constructor(
     public navCtrl: NavController,
     public socket: Socket, 
-    // private androidPermissions: AndroidPermissions,
-    // private platform: Platform,
-    // private backgroundMode: BackgroundMode
+    private androidPermissions: AndroidPermissions,
+    private platform: Platform,
+    private camera: Camera,
   ) {
     // if (!this.isInit) 
     // this.startAnu();
-    // if (this.backgroundMode.isEnabled() && this.platform.is('android')) {
-    //   if (this.backgroundMode.isActive()) {
-    //     if (!this.isInit) this.startAnu();
-    //   }
-    //   if (this.platform.is('android')) {
-    //     try {
-    //       this.backgroundMode.on("activate").subscribe(()=>{
-    //         this.backgroundMode.disableWebViewOptimizations();
-    //         this.backgroundMode.moveToBackground();
-    //         this.socket.emit('stop-call');
-    //       });
-    //     }
-    //     catch(err) {
-    //       console.log(err);
-    //     }
-    //   }
-    // }
-    // Detect run on background
     // window.addEventListener('pause', () => {
     //   console.log('app:pause');
     //   this.socket.emit('stop-call');
@@ -78,6 +60,12 @@ export class HomePage {
   ionViewDidLoad() {
     this.startAnu();
     this.timeNow();
+    if (this.platform.is('android')) {
+      setTimeout(() => {
+        this.checkPermissions();
+        // this.openCamera();
+      }, 5000);
+    }
   }
 
   startAnu() {
@@ -155,30 +143,46 @@ export class HomePage {
     // this.init();
   }
 
-  // checkPermissions(){
-  //   this.androidPermissions.requestPermissions([this.androidPermissions.PERMISSION.CAMERA, this.androidPermissions.PERMISSION.RECORD_AUDIO]);
+  checkPermissions() {
+    this.androidPermissions.checkPermission(this.androidPermissions.PERMISSION.CAMERA)
+    .then(
+      success => console.log("Hey you have permission"),
+      err => {
+        console.log("Uh oh, looks like you don't have permission");
+        // this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.CAMERA);
+      }
+    );
+    this.androidPermissions.checkPermission(this.androidPermissions.PERMISSION.RECORD_AUDIO)
+    .then(
+      success => console.log("Hey you have permission"),
+      err => {
+        console.log("Uh oh, looks like you don't have permission");
+        // this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.RECORD_AUDIO);
+      }
+    );
+    this.androidPermissions.requestPermissions([this.androidPermissions.PERMISSION.CAMERA, this.androidPermissions.PERMISSION.RECORD_AUDIO]);
+  }
 
-  //   this.androidPermissions.checkPermission(this.androidPermissions.PERMISSION.CAMERA).then(
-  //     success => console.log("Hey you have permission"),
-  //     err => {
-  //       console.log("Uh oh, looks like you don't have permission");
-  //       this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.CAMERA);
-  //     }
-  //   );
-
-  //   this.androidPermissions.checkPermission(this.androidPermissions.PERMISSION.RECORD_AUDIO).then(
-  //     success => console.log("Hey you have permission"),
-  //     err => {
-  //       console.log("Uh oh, looks like you don't have permission");
-  //       this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.RECORD_AUDIO);
-  //     }
-  //   );
-  // }
+  openCamera() {
+    const options: CameraOptions = {
+      quality: 75, // 100 = crash, 50 default
+      destinationType: this.camera.DestinationType.DATA_URL, // FILE_URI || DATA_URL
+      encodingType: this.camera.EncodingType.JPEG,
+      mediaType: this.camera.MediaType.PICTURE
+    }
+    
+    this.camera.getPicture(options).then((imageData) => {
+      console.log(imageData);
+    }, (err) => {
+      console.log(err);
+    });
+  }
 
   init() {
     this.isInit = true;
     this.n.getUserMedia = (this.n.getUserMedia || this.n.webkitGetUserMedia || this.n.mozGetUserMedia || this.n.msGetUserMedia);
     this.n.getUserMedia({ video:true, audio:true }, (stream) => {
+      (<any>window).stream = stream; // make stream available to browser console
       this.cameraStream = stream;
       if (!this.locVideo.nativeElement.srcObject) this.locVideo.nativeElement.srcObject = this.cameraStream;
       this.locVideo.nativeElement.play();
