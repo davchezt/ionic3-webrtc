@@ -1,13 +1,13 @@
 import { Component, ViewChild } from '@angular/core';
-import { NavController, Platform } from 'ionic-angular';
+import { NavController, Platform, AlertController } from 'ionic-angular';
 import { AndroidPermissions } from '@ionic-native/android-permissions';
 import { Camera, CameraOptions } from '@ionic-native/camera';
-
 import { Socket } from 'ng-socket-io';
 import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/fromEvent';
+import { LocalNotifications } from '@ionic-native/local-notifications';
 
-declare var SimplePeer;
+declare var SimplePeer: any;
 
 @Component({
   selector: 'page-home',
@@ -19,10 +19,14 @@ export class HomePage {
   @ViewChild('locVideo') locVideo;
 
   cameraStream: any;
-  targetpeer: any;
+  userDevices:any = [];
+  useAudio: boolean = true;
+  isMuted: boolean = false;
+  videoConstraints: any;
+  targetPeer: any;
   peer: any;
   n = <any>navigator;
-  caller: boolean = false;
+  isCaller: boolean = false;
   isConnected: boolean = false;
   isInit: boolean = false;
   roomId = "vidoe-call";
@@ -35,15 +39,16 @@ export class HomePage {
   h:number = 0;
   m:number = 0;
   s:number = 0;
+
   constructor(
     public navCtrl: NavController,
     public socket: Socket, 
     private androidPermissions: AndroidPermissions,
     private platform: Platform,
     private camera: Camera,
+    private localNotifications: LocalNotifications,
+    private alrtCtrl: AlertController
   ) {
-    // if (!this.isInit) 
-    // this.startAnu();
     // window.addEventListener('pause', () => {
     //   console.log('app:pause');
     //   this.socket.emit('stop-call');
@@ -55,38 +60,145 @@ export class HomePage {
     Observable.fromEvent(window, 'beforeunload').subscribe(event => {
       if (this.peer) this.disconnect();
     });
+    this.videoConstraints = {
+      video: true,
+      audio: this.useAudio
+    }
   }
 
   ionViewDidLoad() {
     this.startAnu();
     this.timeNow();
-    if (this.platform.is('android')) {
-      setTimeout(() => {
+    if (this.platform.is('cordova')) {
+      this.platform.ready().then(() => {
         this.checkPermissions();
+        // this.initScheduleNotifications();
         // this.openCamera();
-      }, 5000);
+        this.listCamera();
+      });
     }
   }
 
+  listCamera() {
+    this.n.mediaDevices.enumerateDevices()
+    .then((devices) => {
+      devices.forEach((device) => {
+        console.log(device.kind + ": " + device.label + " id = " + device.deviceId);
+        if (device.kind === 'videoinput') {
+          if (this.userDevices.length === 0) {
+            this.userDevices.push(device.deviceId);
+          }
+          else {
+            Object.keys(this.userDevices).forEach(() => {
+              if (this.userDevices.indexOf(device.deviceId) === -1) this.userDevices.push(device.deviceId);
+            });
+          }
+        }
+      });
+    })
+    .catch((e) => {
+      console.log(e.name + ": " + e.message);
+    });
+  }
+
+  initWebRTC() {
+    this.isInit = true;
+    const handleSuccess = (stream: MediaStream) => {
+      (<any>window).stream = stream; // make stream available to browser console
+      this.locVideo.nativeElement.srcObject = stream;
+      this.locVideo.nativeElement.muted = true;
+      this.locVideo.nativeElement.play();
+    };
+    const handleError = (error: any) => {
+      console.log('navigator.getUserMedia error: ' + error.name + ', ' + error.message);
+    };
+    this.n.mediaDevices.getUserMedia(this.videoConstraints).then(handleSuccess).catch(handleError);
+  }
+
+  stopWebRTC() {
+    this.isInit = false;
+    if (this.cameraStream) {
+      this.cameraStream.getVideoTracks().forEach((track) => {
+        track.stop();
+      });
+      this.cameraStream.getAudioTracks().forEach((track) => {
+        track.stop();
+      });
+    }
+    this.socket.emit('stop-call', { room: this.roomId });
+  }
+
+  openCamera() {
+    const options: CameraOptions = {
+      quality: 75, // 100 = crash, 50 default
+      destinationType: this.camera.DestinationType.DATA_URL, // FILE_URI || DATA_URL
+      encodingType: this.camera.EncodingType.JPEG,
+      mediaType: this.camera.MediaType.PICTURE
+    }
+    
+    this.camera.getPicture(options).then((imageData) => {
+      console.log(imageData);
+    }, (err) => {
+      console.log(err);
+    });
+  }
+
+  notify() {
+    let notification = {
+      id: 1,
+      title: "Testing",
+      text: "Ngetest Doang",
+      at: new Date(new Date().getTime() + 30000),
+      forceShow: 'true',
+      coldstart: false,
+      foreground: true
+    };
+    this.localNotifications.schedule(notification);
+  }
+
+  initScheduleNotifications() {
+    const notificationId = 42;
+    const scheduleTime = 60 * 1000 * 5;
+    this.localNotifications.isScheduled(notificationId).then(
+    isScheduled => {
+      if (isScheduled ) {
+        this.localNotifications.update({
+          id: notificationId,
+          trigger: { at: new Date(new Date().getTime() + scheduleTime) }
+        });
+      } else {
+        this.localNotifications.schedule({
+          id: notificationId,
+          text: 'Come back !',
+          trigger: { at: new Date(new Date().getTime() + scheduleTime) }
+        });
+      }
+    });
+    // eventName	string	The name of the event. Available events: schedule, trigger, click, update, clear, clearall, cancel, cancelall. Custom event names are possible for actions
+    this.localNotifications.on('click').subscribe((data) => {
+      console.log(data);
+    });
+  }
+
   startAnu() {
-    this.caller = location.hash === '#call';
+    // this.isCaller = location.hash === '#call';
     this.socket.connect();
     this.socket.emit('subscribe', this.roomId);
     this.socket.on('start-call', (data) => {
       let peer:any = data;
       if (peer.data.type === 'offer') {
-        if (!this.caller) {
+        if (!this.isCaller) {
           console.log('offer:', peer.data);
-          if (!this.caller) this.init();
-          this.targetpeer = JSON.stringify(peer.data);
+          this.init();
+          this.targetPeer = JSON.stringify(peer.data);
         }
       }
       else {
-        if (this.caller) {
+        if (this.isCaller) {
           console.log('answer:', peer.data);
-          this.targetpeer = JSON.stringify(peer.data);
+          this.targetPeer = JSON.stringify(peer.data);
           if (this.peer) {
-            this.peer.signal(JSON.parse(this.targetpeer));
+            this.peer.signal(JSON.parse(this.targetPeer));
           }
         }
       }
@@ -100,7 +212,7 @@ export class HomePage {
     this.socket.on('chat-call', (data) => {
       let peer:any = data;
       console.log(peer.message);
-      if (this.caller) {
+      if (this.isCaller) {
         if(!peer.message.sender) {
           if (peer.message.text == 'ping') {
             if (this.timeOut) clearTimeout(this.timeOut);
@@ -138,9 +250,7 @@ export class HomePage {
       this.disconnect();
       this.stropTimer();
       console.log('stop-call');
-    })
-
-    // this.init();
+    });
   }
 
   checkPermissions() {
@@ -149,7 +259,7 @@ export class HomePage {
       success => console.log("Hey you have permission"),
       err => {
         console.log("Uh oh, looks like you don't have permission");
-        // this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.CAMERA);
+        this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.CAMERA);
       }
     );
     this.androidPermissions.checkPermission(this.androidPermissions.PERMISSION.RECORD_AUDIO)
@@ -157,59 +267,44 @@ export class HomePage {
       success => console.log("Hey you have permission"),
       err => {
         console.log("Uh oh, looks like you don't have permission");
-        // this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.RECORD_AUDIO);
+        this.androidPermissions.requestPermission(this.androidPermissions.PERMISSION.RECORD_AUDIO);
       }
     );
-    this.androidPermissions.requestPermissions([this.androidPermissions.PERMISSION.CAMERA, this.androidPermissions.PERMISSION.RECORD_AUDIO]);
+    this.androidPermissions.requestPermissions([
+      this.androidPermissions.PERMISSION.CAMERA,
+      this.androidPermissions.PERMISSION.RECORD_AUDIO
+    ]);
   }
 
-  openCamera() {
-    const options: CameraOptions = {
-      quality: 75, // 100 = crash, 50 default
-      destinationType: this.camera.DestinationType.DATA_URL, // FILE_URI || DATA_URL
-      encodingType: this.camera.EncodingType.JPEG,
-      mediaType: this.camera.MediaType.PICTURE
-    }
-    
-    this.camera.getPicture(options).then((imageData) => {
-      console.log(imageData);
-    }, (err) => {
-      console.log(err);
-    });
+  switcCamera() {
+    if (this.userDevices.length < 2) return;
   }
 
   init() {
     this.isInit = true;
     this.n.getUserMedia = (this.n.getUserMedia || this.n.webkitGetUserMedia || this.n.mozGetUserMedia || this.n.msGetUserMedia);
-    this.n.getUserMedia({ video:true, audio:true }, (stream) => {
-      (<any>window).stream = stream; // make stream available to browser console
+    // front { facingMode: { exact: 'user' } }
+    // back { facingMode: { exact: 'environment' } }
+    const configs = {
+      video: true,
+      audio: this.useAudio
+    };
+    this.n.getUserMedia(configs, (stream: MediaStream) => {
+      (<any>window).stream = stream;
       this.cameraStream = stream;
       if (!this.locVideo.nativeElement.srcObject) this.locVideo.nativeElement.srcObject = this.cameraStream;
+      this.locVideo.nativeElement.volume = 1;
+      this.locVideo.nativeElement.muted = true;
       this.locVideo.nativeElement.play();
       this.peer = new SimplePeer({
-        initiator: this.caller,
+        initiator: this.isCaller,
         trickle: false,
         stream: this.cameraStream,
         iceTransportPolicy: "relay",
         config: {
           iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
-            // {
-            //   url: 'turn:turn.anyfirewall.com:443?transport=tcp',
-            //   credential: 'webrtc',
-            //   username: 'webrtc'
-            // },
-            // {
-            //   url: 'stun:numb.viagenie.ca',
-            //   credential: '4Bahagia4',
-            //   username: 'davchezt@gmail.com'
-            // },
-            // {
-            //   url: 'turn:numb.viagenie.ca',
-            //   credential: '4Bahagia4',
-            //   username: 'davchezt@gmail.com'
-            // }
+            // { urls: 'stun:stun.l.google.com:19302' },
+            // { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
           ]
         }
       });
@@ -222,14 +317,12 @@ export class HomePage {
       
       this.peer.on('signal', (data) => {
         // console.log('signal:', JSON.stringify(data));
-
         this.socket.emit('start-call', { room: this.roomId, data: data });
       });
       
-      this.peer.on('data', (data) => {
-        console.log('Recieved message:' + data);
-        this.showSmile();
-      });
+      // this.peer.on('data', (data) => {
+      //   console.log('Recieved message:' + data);
+      // });
       
       this.peer.on('stream', (streams) => {
         this.rtcVideo.nativeElement.srcObject = streams;
@@ -239,12 +332,14 @@ export class HomePage {
       this.peer.on('close', () => {
         console.log("peer close");
         this.socket.emit('stop-call', { room: this.roomId });
+        // Stream Video
         stream.getVideoTracks().forEach(function(track) {
           track.stop();
         });
         stream.getAudioTracks().forEach(function(track) {
           track.stop();
         });
+        // Local video
         if (this.cameraStream) {
           this.cameraStream.getVideoTracks().forEach(function(track) {
             track.stop();
@@ -266,23 +361,26 @@ export class HomePage {
     });
   }
 
+  toggleAudio() {
+    this.isMuted = !this.isMuted;
+    this.cameraStream.getAudioTracks()[0].enabled = !this.isMuted;
+  }
+
   connect() {
     if (this.peer) {
-      this.peer.signal(JSON.parse(this.targetpeer));
+      this.peer.signal(JSON.parse(this.targetPeer));
     }
   }
   
   message() {
     if (this.peer) {
-      // this.peer.send("ping!");
-      this.socket.emit('chat-call', { room: this.roomId, message: { text: "heart", sender: this.caller }});
+      this.socket.emit('chat-call', { room: this.roomId, message: { text: "heart", sender: this.isCaller }});
     }
   }
 
   sendMessage() {
     if (this.peer) {
-      // this.peer.send(this.message);
-      this.socket.emit('chat-call', { room: this.roomId, message: { text: "ping", sender: this.caller }});
+      this.socket.emit('chat-call', { room: this.roomId, message: { text: "ping", sender: this.isCaller }});
     }
   }
 
@@ -294,7 +392,7 @@ export class HomePage {
 
       this.peer.destroy();
       this.peer = null;
-      this.targetpeer = null;
+      this.targetPeer = null;
       // this.init();
     }
   }
@@ -311,10 +409,6 @@ export class HomePage {
     this.timeOut = setTimeout(() => {
       this.heartShow = false;
     }, 5000);
-  }
-
-  toggleChange() {
-    
   }
 
   startTimer() {

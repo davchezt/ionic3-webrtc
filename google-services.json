@@ -1,0 +1,99 @@
+{
+  "project_info": {
+    "project_number": "929651249469",
+    "firebase_url": "https://agrifarm-app.firebaseio.com",
+    "project_id": "agrifarm-app",
+    "storage_bucket": "agrifarm-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:929651249469:android:05cef31cd550d6b7",
+        "android_client_info": {
+          "package_name": "com.davchezt.messengger"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "929651249469-2f3t5hcc884ujqfu1dqbc98sjkrj3qj3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAszp96xX8EH_1eiW2z3FLWvysFxCj98WA"
+        },
+        {
+          "current_key": "AIzaSyA6zOj5kyVTYFLTXS0b6lFovkL0WAHvf4I"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:929651249469:android:764d2cb7da3280eb",
+        "android_client_info": {
+          "package_name": "io.ionic.starter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "929651249469-3k65nte7a0eoufd29r2ohv2c1c3qh9cj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.ionic.starter",
+            "certificate_hash": "d2a54c1c8c49b9f5480f9d62cdd22dbc0f916650"
+          }
+        },
+        {
+          "client_id": "929651249469-2f3t5hcc884ujqfu1dqbc98sjkrj3qj3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAszp96xX8EH_1eiW2z3FLWvysFxCj98WA"
+        },
+        {
+          "current_key": "AIzaSyA6zOj5kyVTYFLTXS0b6lFovkL0WAHvf4I"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "929651249469-2f3t5hcc884ujqfu1dqbc98sjkrj3qj3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "929651249469-bt94kf36lcj1a42m5eed0ihurlukqeu2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.militant.agrifarm"
+              }
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

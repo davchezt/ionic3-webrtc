@@ -6,49 +6,67 @@
   </ion-navbar>
 </ion-header-->
 
-<ion-content padding>
-  <div class="content">    
-    <h1 ion-text *ngIf="caller && !isConnected && isInit" color="primary">START CALLING</h1>
-    <h1 ion-text *ngIf="!caller && !isConnected && targetpeer" color="primary">INCOMMING CALL</h1>
-    <h1 ion-text *ngIf="timeCounter" color="primary" class="timer"><ion-icon name="ios-videocam-outline" style="zoom:0.75"></ion-icon> {{ timeCounter }}</h1>
-    <!--ion-textarea rows="4" [(ngModel)]="targetpeer"></ion-textarea-->
-    <ion-grid class="button-group">
-      <ion-row>
-        <ion-col>
-          <button *ngIf="caller" ion-button block color="secondary" (click)="init()" [disabled]="isConnected">
-            <ion-icon name="ios-videocam"></ion-icon>
-          </button>
-          <button *ngIf="!caller" ion-button block color="secondary" (click)="connect()" [disabled]="isConnected && targetpeer || !isConnected && !targetpeer">
-            <ion-icon name="ios-videocam"></ion-icon>
-          </button>
-        </ion-col>
-        <ion-col>
-          <ion-grid class="button-group" no-padding>
-            <ion-row>
-              <ion-col>
-                <button ion-button full color="primary" (click)="sendMessage()" [disabled]="!isConnected">
-                  <ion-icon name="ios-thumbs-up" color="light"></ion-icon>
-                </button>
-              </ion-col>
-              <ion-col>
-                <button ion-button full color="primary" (click)="message()" [disabled]="!isConnected">
-                  <ion-icon name="ios-heart-outline" color="light"></ion-icon>
-                </button>
-              </ion-col>
-            </ion-row>
-          </ion-grid>
-        </ion-col>
-        <ion-col>
-          <button ion-button block color="danger" (click)="disconnect()" [disabled]="!isConnected">
-            <ion-icon name="ios-videocam-outline"></ion-icon>
-          </button>
-        </ion-col>
-      </ion-row>
-    </ion-grid>
+<ion-content>
+  <div padding class="call-container">
+    <div class="content">    
+      <h1 ion-text *ngIf="caller && !isConnected && isInit" color="primary">START CALLING</h1>
+      <h1 ion-text *ngIf="!caller && !isConnected && targetPeer" color="primary">INCOMMING CALL</h1>
+      <h1 ion-text *ngIf="timeCounter" color="light" class="timer">
+        <ion-grid no-padding>
+          <ion-row>
+            <ion-col ion-text text-left>
+              <button ion-button clear color="secondary" (click)="toggleAudio()" [color]="isMuted ? 'danger':'secondary'">
+                <ion-icon [name]="isMuted ? 'ios-mic-off-outline':'ios-mic'"></ion-icon>
+              </button>
+            </ion-col>
+            <ion-col ion-text text-right>
+              {{ timeCounter }}
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+      </h1>
+      <!--ion-textarea rows="4" [(ngModel)]="targetPeer"></ion-textarea-->
+      <ion-grid class="button-group">
+        <ion-row>
+          <ion-col>
+            <button *ngIf="isCaller" ion-button block color="secondary" (click)="init()" [disabled]="isConnected">
+              <ion-icon name="ios-videocam"></ion-icon>
+            </button>
+            <button *ngIf="!isCaller" ion-button block color="secondary" (click)="connect()" [disabled]="isConnected && targetPeer || !isConnected && !targetPeer">
+              <ion-icon name="ios-videocam-outline"></ion-icon>
+            </button>
+          </ion-col>
+          <ion-col>
+            <ion-grid class="button-group" no-padding>
+              <ion-row>
+                <ion-col>
+                  <button ion-button full color="primary" (click)="sendMessage()" [disabled]="!isConnected">
+                    <ion-icon name="ios-thumbs-up" color="light"></ion-icon>
+                  </button>
+                </ion-col>
+                <ion-col>
+                  <button ion-button full color="primary" (click)="message()" [disabled]="!isConnected">
+                    <ion-icon name="ios-heart-outline" color="light"></ion-icon>
+                  </button>
+                </ion-col>
+              </ion-row>
+            </ion-grid>
+          </ion-col>
+          <ion-col>
+            <button *ngIf="isCaller" ion-button block color="danger" (click)="disconnect()" [disabled]="!isConnected">
+              <ion-icon name="ios-videocam"></ion-icon>
+            </button>
+            <button *ngIf="!isCaller" ion-button block color="danger" (click)="disconnect()" [disabled]="!isConnected">
+              <ion-icon name="ios-videocam-outline"></ion-icon>
+            </button>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </div>
   </div>
   
   <div class="video-container">
-    <video #rtcVideo></video>
+    <video #rtcVideo poster="assets/imgs/video-bg.png"></video>
   </div>
 
   <div class="smile" *ngIf="heartShow">
@@ -58,11 +76,14 @@
     <ion-icon name="ios-thumbs-up-outline" color="primary"></ion-icon>
   </div>
 
-  <video #locVideo constrols width="120" class="myvideo" *ngIf="isInit || isConnected"></video>
+  <div class="local-video" *ngIf="isInit || isConnected">
+    <video #locVideo poster="assets/imgs/video-bg.png"></video>
+  </div>
+
   <div class="time-now">
     <ion-item no-lines>
       <ion-label>caller</ion-label>
-      <ion-toggle checked="false" [(ngModel)]="caller"></ion-toggle>
+      <ion-toggle checked="false" [(ngModel)]="isCaller"></ion-toggle>
     </ion-item>
     {{ timeClock }}
   </div>

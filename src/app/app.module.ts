@@ -10,9 +10,13 @@ import { HomePage } from '../pages/home/home';
 // NATIVES
 import { AndroidPermissions } from '@ionic-native/android-permissions';
 import { Camera } from '@ionic-native/camera';
+import { LocalNotifications } from '@ionic-native/local-notifications';
+import { Push } from '@ionic-native/push';
 
 import { SocketIoModule, SocketIoConfig } from 'ng-socket-io';
-const config: SocketIoConfig = { url: 'https://militant-socket-server.herokuapp.com', options: {} };
+import { HttpClientModule } from '@angular/common/http';
+// const config: SocketIoConfig = { url: 'https://militant-socket-server.herokuapp.com', options: {} };
+const config: SocketIoConfig = { url: 'http://192.168.1.200:8080', options: {} };
 
 @NgModule({
   declarations: [
@@ -21,6 +25,7 @@ const config: SocketIoConfig = { url: 'https://militant-socket-server.herokuapp.
   ],
   imports: [
     BrowserModule,
+    HttpClientModule,
     IonicModule.forRoot(MyApp, {
       mode: 'ios', // ios md or wp
       backButtonText: ' '
@@ -36,7 +41,9 @@ const config: SocketIoConfig = { url: 'https://militant-socket-server.herokuapp.
     StatusBar,
     SplashScreen,
     AndroidPermissions,
+    LocalNotifications,
     Camera,
+    Push,
     {provide: ErrorHandler, useClass: IonicErrorHandler}
   ]
 })
